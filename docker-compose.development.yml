@@ -1,9 +1,11 @@
 services:
   backend:
     image: ${BACKEND_IMAGE:-core-apis-backend:latest}
-
     container_name: core-backend
     restart: unless-stopped
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     ports:
       - "10000:10000"
