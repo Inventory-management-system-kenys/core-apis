@@ -1,4 +1,4 @@
-import { createMap, Mapper } from '@automapper/core';
+import { createMap, forMember, mapFrom, Mapper } from '@automapper/core';
 import { AutomapperProfile, InjectMapper } from '@automapper/nestjs';
 import { Injectable } from '@nestjs/common';
 import { ActivityLogEntity } from '../../../../infrastructure/persistence/entities/activity-log.entity';
@@ -12,8 +12,20 @@ export class ActivityLogProfile extends AutomapperProfile {
 
   public get profile() {
     return (mapper: Mapper) => {
-      createMap(mapper, ActivityLogEntity, ActivityLog);
-      createMap(mapper, ActivityLog, ActivityLogEntity);
+      createMap(
+        mapper,
+        ActivityLogEntity,
+        ActivityLog,
+        forMember((d) => d.entityName, mapFrom((s) => s.entityType ?? '')),
+        forMember((d) => d.details, mapFrom((s) => s.metadata)),
+      );
+      createMap(
+        mapper,
+        ActivityLog,
+        ActivityLogEntity,
+        forMember((d) => d.entityType, mapFrom((s) => s.entityName)),
+        forMember((d) => d.metadata, mapFrom((s) => s.details)),
+      );
       createMap(mapper, CreateActivityLogRequest, CreateActivityLogCommand);
       createMap(mapper, ActivityLog, ActivityLogResponse);
     };

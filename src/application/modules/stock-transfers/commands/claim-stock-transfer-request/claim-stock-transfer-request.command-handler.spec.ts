@@ -65,7 +65,7 @@ describe('ClaimStockTransferRequestCommandHandler', () => {
       updateAsync: jest.fn(async (transfer) => transfer),
     };
     inventoryRepo = {
-      findByOrgLocationProductAsync: jest.fn(async () => ({ id: 'inv-req' })),
+      findOrCreateAsync: jest.fn(async () => ({ id: 'inv-req' })),
     };
     orchestrator = { addStock: jest.fn(async () => undefined) };
     pushNotification = { sendBatchAsync: jest.fn(async () => undefined) };
@@ -98,9 +98,10 @@ describe('ClaimStockTransferRequestCommandHandler', () => {
     await expect(handler.execute(command())).rejects.toThrow(/not in ACCEPTED state/);
   });
 
-  it('rejects when requesting-location inventory is missing', async () => {
-    inventoryRepo.findByOrgLocationProductAsync.mockResolvedValue(null);
-    await expect(handler.execute(command())).rejects.toThrow(/No inventory record/);
+  it('auto-creates requesting-location inventory when missing or present', async () => {
+    (inventoryRepo.findOrCreateAsync as jest.Mock).mockResolvedValue({ id: 'inv-req' });
+    await handler.execute(command());
+    expect(inventoryRepo.findOrCreateAsync).toHaveBeenCalledWith('org-1', 'loc-requesting', 'prod-1');
   });
 
   it('adds stock, completes transfer, marks request COMPLETED', async () => {

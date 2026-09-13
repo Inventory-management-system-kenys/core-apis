@@ -8,7 +8,6 @@ import { LocationFilter } from '../../domain';
 
 export class ListLocationsRequest implements Filter<LocationFilter> {
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public organizationId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public parentId?: string;
   @ApiPropertyOptional({ enum: ELocationType }) @IsOptional() @IsEnum(ELocationType) @AutoMap(() => String) public type?: ELocationType;
   @ApiPropertyOptional()
   @IsOptional()

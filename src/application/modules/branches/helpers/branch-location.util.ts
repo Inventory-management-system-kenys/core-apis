@@ -1,5 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
-import { LocationAccessDeniedException } from '../../../../common';
+import { LocationAccessDeniedException, LocationNotFoundException } from '../../../../common';
 import { ILocationRepo } from '../../locations';
 
 export async function assignLocationsToBranch(
@@ -16,7 +15,7 @@ export async function assignLocationsToBranch(
   for (const locationId of uniqueIds) {
     const location = await locationRepo.getAsync(locationId);
     if (!location) {
-      throw new BadRequestException(`Location ${locationId} not found`);
+      throw new LocationNotFoundException(locationId);
     }
     if (location.organizationId !== params.organizationId) {
       throw new LocationAccessDeniedException(undefined, 'Location does not belong to this organization.');

@@ -18,6 +18,7 @@ export class CreateBillRequest {
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public walkInPhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public walkInGstin?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public notes?: string;
+  @ApiPropertyOptional({ enum: EPaymentMethod }) @IsOptional() @IsEnum(EPaymentMethod) @AutoMap(() => String) public paymentMethod?: EPaymentMethod;
   @ApiPropertyOptional({ enum: ESaleType, default: ESaleType.Normal }) @IsOptional() @IsEnum(ESaleType) @AutoMap(() => String) public saleType?: ESaleType;
   @ApiPropertyOptional({ enum: ECustomerType }) @IsOptional() @IsEnum(ECustomerType) @AutoMap(() => String) public customerType?: ECustomerType;
   @ApiPropertyOptional({ enum: EPaymentTiming }) @IsOptional() @IsEnum(EPaymentTiming) @AutoMap(() => String) public paymentTiming?: EPaymentTiming;

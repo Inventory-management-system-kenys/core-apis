@@ -198,8 +198,6 @@ describe('expenses controller', () => {
     const decorators = methodDecorators(source(), 'updateStatus');
     expect(hasMethodGuard(decorators, 'RolesGuard')).toBe(true);
     expect(methodRoles(decorators)).toEqual([
-      'ERole.StoreManager',
-      'ERole.OrgManager',
       'ERole.OrgAdmin',
       'ERole.SuperAdmin',
     ]);
@@ -222,8 +220,6 @@ describe('credit-transactions controller', () => {
   it('restricts credit transaction search to manager tier', () => {
     const decorators = methodDecorators(source(), 'search');
     expect(methodRoles(decorators)).toEqual([
-      'ERole.StoreManager',
-      'ERole.OrgManager',
       'ERole.OrgAdmin',
       'ERole.SuperAdmin',
     ]);
@@ -241,8 +237,6 @@ describe('item-returns controller', () => {
     const decorators = methodDecorators(source(), 'delete');
     expect(hasMethodGuard(decorators, 'RolesGuard')).toBe(true);
     expect(methodRoles(decorators)).toEqual([
-      'ERole.StoreManager',
-      'ERole.OrgManager',
       'ERole.OrgAdmin',
       'ERole.SuperAdmin',
     ]);
@@ -260,8 +254,6 @@ describe('report-generation-logs controller', () => {
     const decorators = methodDecorators(source(), 'delete');
     expect(hasMethodGuard(decorators, 'RolesGuard')).toBe(true);
     expect(methodRoles(decorators)).toEqual([
-      'ERole.StoreManager',
-      'ERole.OrgManager',
       'ERole.OrgAdmin',
       'ERole.SuperAdmin',
     ]);
@@ -293,7 +285,7 @@ describe('orders controller', () => {
 });
 
 describe('destructive-endpoint role elevation (already-authenticated controllers)', () => {
-  const managerTier = ['ERole.StoreManager', 'ERole.OrgManager', 'ERole.OrgAdmin', 'ERole.SuperAdmin'];
+  const managerTier = ['ERole.OrgAdmin', 'ERole.SuperAdmin'];
 
   it.each([
     ['customers/customers.controller.ts', 'delete'],
@@ -325,7 +317,7 @@ describe('invoices controller', () => {
 
 describe('stock-transfer-requests controller', () => {
   const source = () => readController('stock-transfers/stock-transfer-requests.controller.ts');
-  const storeTier = ['ERole.OrgAdmin', 'ERole.SuperAdmin', 'ERole.StoreManager', 'ERole.StoreStaff'];
+  const storeTier = ['ERole.OrgAdmin', 'ERole.SuperAdmin', 'ERole.BranchManager'];
 
   it('requires ClerkAuthGuard and RolesGuard on the whole controller', () => {
     expect(hasClassGuard(source(), 'ClerkAuthGuard')).toBe(true);

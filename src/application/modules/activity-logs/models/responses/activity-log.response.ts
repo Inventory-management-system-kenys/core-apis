@@ -9,4 +9,5 @@ export class ActivityLogResponse {
   @ApiProperty() @AutoMap() public entityName: string;
   @ApiProperty() @AutoMap() public entityId: string;
   @ApiPropertyOptional() @AutoMap() public details?: Record<string, any>;
+  @ApiPropertyOptional() @AutoMap(() => Date) public createdAt?: Date;
 }

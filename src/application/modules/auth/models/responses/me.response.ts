@@ -30,6 +30,8 @@ export class MeResponse {
   public locationIds: string[];
   @ApiProperty({ description: 'True when the user can view all branches/locations' })
   public hasOrgWideAccess: boolean;
+  @ApiPropertyOptional({ description: 'Branch UUID the user belongs to (if scoped to a branch)' })
+  public branchId?: string;
   @ApiPropertyOptional({ description: 'ISO 4217 currency code for display formatting' })
   public currencyCode?: string;
 }

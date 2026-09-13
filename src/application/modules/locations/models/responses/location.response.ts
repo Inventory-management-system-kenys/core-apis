@@ -5,7 +5,7 @@ import { ELocationType } from 'src/infrastructure/persistence/entities';
 export class LocationResponse {
   @ApiProperty() @AutoMap() public id: string;
   @ApiProperty() @AutoMap() public organizationId: string;
-  @ApiPropertyOptional() @AutoMap() public parentId?: string;
+  @ApiPropertyOptional() @AutoMap() public branchId?: string;
   @ApiProperty() @AutoMap() public name: string;
   @ApiProperty({ enum: ELocationType }) @AutoMap(() => String) public type: ELocationType;
   @ApiPropertyOptional() @AutoMap() public imageKey?: string;

@@ -3,7 +3,7 @@ import { InjectMapper } from '@automapper/nestjs';
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { ClerkAuthGuard, CqrsMediator, CurrentUser, AuthenticatedUser, Roles, RolesGuard, assertOrgOwnership } from 'src/common';
+import { ClerkAuthGuard, CqrsMediator, CurrentUser, AuthenticatedUser, Roles, RolesGuard, assertOrgOwnership, assertLocationAccess } from 'src/common';
 import { ERole } from 'src/infrastructure/persistence/entities/role.entity';
 import {
   AcceptStockTransferRequestCommand,
@@ -28,7 +28,7 @@ import {
 @ApiTags('Stock Transfer Requests')
 @Controller({ path: 'stock-transfer-requests', version: '1' })
 @UseGuards(ClerkAuthGuard, RolesGuard)
-@Roles(ERole.OrgAdmin, ERole.SuperAdmin)
+@Roles(ERole.OrgAdmin, ERole.SuperAdmin, ERole.BranchManager)
 export class StockTransferRequestsController {
   constructor(
     protected readonly mediator: CqrsMediator,
@@ -45,6 +45,7 @@ export class StockTransferRequestsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('locationId') locationId: string,
   ): Promise<StockTransferRequestResponse[]> {
+    if (locationId) assertLocationAccess(user, locationId);
     const query              = new ListMyStockTransferRequestsQuery();
     query.organizationId     = user.organizationId;
     query.locationId         = locationId;
@@ -61,6 +62,7 @@ export class StockTransferRequestsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('locationId') locationId: string,
   ): Promise<StockTransferRequestResponse[]> {
+    if (locationId) assertLocationAccess(user, locationId);
     const query                = new ListOpenStockTransferRequestsQuery();
     query.organizationId       = user.organizationId;
     query.viewerLocationId     = locationId;
@@ -91,6 +93,7 @@ export class StockTransferRequestsController {
   @HttpCode(HttpStatus.CREATED)
   @Post()
   public async raise(@CurrentUser() user: AuthenticatedUser, @Body() body: RaiseStockTransferRequestRequest): Promise<StockTransferRequestResponse> {
+    assertLocationAccess(user, body.requestingLocationId);
     const command              = this.mapper.map(body, RaiseStockTransferRequestRequest, RaiseStockTransferRequestCommand);
     command.organizationId     = user.organizationId;
     command.requestingUserId   = user.dbUserId;
@@ -108,6 +111,7 @@ export class StockTransferRequestsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: AcceptStockTransferRequestRequest,
   ): Promise<StockTransferRequestResponse> {
+    assertLocationAccess(user, body.acceptingLocationId);
     const command              = this.mapper.map(body, AcceptStockTransferRequestRequest, AcceptStockTransferRequestCommand);
     command.requestId          = id;
     command.organizationId     = user.organizationId;
@@ -122,6 +126,11 @@ export class StockTransferRequestsController {
   @HttpCode(HttpStatus.OK)
   @Put(':id/claim')
   public async claim(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<StockTransferRequestResponse> {
+    const query = new GetStockTransferRequestQuery();
+    query.id    = id;
+    const existing = await this.mediator.execute<GetStockTransferRequestQuery, StockTransferRequest>(query);
+    assertOrgOwnership(user, existing.organizationId, 'stock-transfer-request');
+    assertLocationAccess(user, existing.requestingLocationId);
     const command              = new ClaimStockTransferRequestCommand();
     command.requestId          = id;
     command.organizationId     = user.organizationId;
@@ -136,6 +145,11 @@ export class StockTransferRequestsController {
   @HttpCode(HttpStatus.OK)
   @Put(':id/cancel')
   public async cancel(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<StockTransferRequestResponse> {
+    const query = new GetStockTransferRequestQuery();
+    query.id    = id;
+    const existing = await this.mediator.execute<GetStockTransferRequestQuery, StockTransferRequest>(query);
+    assertOrgOwnership(user, existing.organizationId, 'stock-transfer-request');
+    assertLocationAccess(user, existing.requestingLocationId);
     const command              = new CancelStockTransferRequestCommand();
     command.requestId          = id;
     command.organizationId     = user.organizationId;

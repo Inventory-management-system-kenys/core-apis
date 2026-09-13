@@ -3,7 +3,7 @@ import { IQueryHandler } from '@nestjs/cqrs';
 import { InjectMapper } from '@automapper/nestjs';
 import { Mapper } from '@automapper/core';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { QueryHandlerStrict } from '../../../../../common';
+import { EOrder, QueryHandlerStrict } from '../../../../../common';
 import { ACTIVITY_LOG_REPO } from '../../../../constants';
 import { ActivityLog } from '../../domain';
 import { IActivityLogRepo } from '../..';
@@ -20,7 +20,11 @@ export class ListActivityLogsQueryHandler implements IQueryHandler<ListActivityL
 
   public async execute(query: ListActivityLogsQuery): Promise<ActivityLogResponse[]> {
     this.logger.info(`Executing ${ListActivityLogsQuery.name}`);
-    const items = await this.repo.allAsync({ organizationId: query.organizationId });
+    const items = await this.repo.allAsync({
+      organizationId: query.organizationId,
+      $orderBy: 'createdAt',
+      $order: EOrder.Desc,
+    });
     return this.mapper.mapArray(items, ActivityLog, ActivityLogResponse);
   }
 }

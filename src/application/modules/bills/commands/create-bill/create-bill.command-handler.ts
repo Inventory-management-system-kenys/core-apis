@@ -36,6 +36,7 @@ export class CreateBillCommandHandler implements ICommandHandler<CreateBillComma
     // so POS create-with-basket persists line items and header totals.
     bill.items = this.mapper.mapArray(command.items ?? [], CreateBillItemCommand, BillItem);
     bill.saleType         = saleType;
+    bill.paymentMethod    = command.paymentMethod;
     bill.blackAmount      = 0;
     bill.commissionAmount = 0;
     bill.billNumber       = generateBillNumber();

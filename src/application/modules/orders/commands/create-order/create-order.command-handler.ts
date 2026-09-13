@@ -13,7 +13,7 @@ import { BillCompletionService, CreditLimitExceededError } from '../../../../sha
 import { IBillRepo } from '../../../bills';
 import { Bill } from '../../../bills/domain';
 import { generateBillNumber } from '../../../bills/helpers';
-import { EBillStatus, EPaymentTiming, ESaleType } from '../../../../../infrastructure/persistence/entities';
+import { EBillStatus, EPaymentMethod, EPaymentTiming, ESaleType } from '../../../../../infrastructure/persistence/entities';
 import { EOrderStatus } from '../../../../shared/enums/e-order-status';
 import { EFulfillmentMode } from '../../../../shared/enums/e-fulfillment-mode';
 import { ILocationRepo } from '../../../locations';
@@ -99,6 +99,9 @@ export class CreateOrderCommandHandler implements ICommandHandler<CreateOrderCom
     bill.saleType = command.saleType ?? ESaleType.Normal;
     bill.customerType = command.customerType;
     bill.paymentTiming = command.paymentTiming ?? EPaymentTiming.Cod;
+    if (bill.paymentTiming === EPaymentTiming.Cod) {
+      bill.paymentMethod = EPaymentMethod.Cash;
+    }
     bill.partialAmount = command.paymentTiming === EPaymentTiming.Half ? command.partialAmount : undefined;
     bill.subtotal = Number(order.subtotal ?? order.totalAmount ?? 0);
     bill.taxAmount = Number(order.taxAmount ?? 0);

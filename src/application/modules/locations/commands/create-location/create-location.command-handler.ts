@@ -1,9 +1,10 @@
-import { Inject, BadRequestException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { ICommandHandler } from '@nestjs/cqrs';
 import { Mapper } from '@automapper/core';
 import { InjectMapper } from '@automapper/nestjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CommandHandlerStrict } from 'src/common';
+import { BranchNotFoundException, BranchNotActiveException } from 'src/common/exceptions/branches';
 import { BRANCH_REPO, LOCATION_REPO } from '../../../../constants';
 import { Location } from '../../domain';
 import { ILocationRepo } from '../../i-location.repo';
@@ -23,7 +24,10 @@ export class CreateLocationCommandHandler implements ICommandHandler<CreateLocat
     this.logger.info(`Executing ${CreateLocationCommand.name}`);
     const branch = await this.branchRepo.getAsync(command.branchId);
     if (!branch || branch.organizationId !== command.organizationId) {
-      throw new BadRequestException('Branch not found in this organization');
+      throw new BranchNotFoundException();
+    }
+    if (!branch.isActive) {
+      throw new BranchNotActiveException();
     }
     const location    = this.mapper.map(command, CreateLocationCommand, Location);
     location.isActive = true;

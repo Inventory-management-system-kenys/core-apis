@@ -260,6 +260,7 @@ export class AuthController {
         organization: undefined,
         membership: undefined,
         locationIds: [],
+        branchId: currentUser.branchId,
         hasOrgWideAccess: false,
       };
     }
@@ -300,6 +301,7 @@ export class AuthController {
       organization: orgSummary,
       membership: membershipSummary,
       locationIds: currentUser.locationIds ?? [],
+      branchId: currentUser.branchId,
       hasOrgWideAccess: currentUser.hasOrgWideAccess ?? false,
       currencyCode: resolveCurrencyCode(result.organization?.country),
     };

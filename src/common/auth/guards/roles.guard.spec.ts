@@ -23,8 +23,9 @@ jest.mock('../../../infrastructure/persistence/entities/role.entity', () => ({
   ERole: {
     OrgAdmin: 'org_admin',
     SuperAdmin: 'super_admin',
-    StoreManager: 'store_manager',
-    StoreStaff: 'store_staff',
+    BranchManager: 'branch_manager',
+    Driver: 'driver',
+    Packer: 'packer',
   },
 }));
 
@@ -38,8 +39,9 @@ import { RolesGuard } from './roles.guard';
 const ERole = {
   OrgAdmin: 'org_admin',
   SuperAdmin: 'super_admin',
-  StoreManager: 'store_manager',
-  StoreStaff: 'store_staff',
+  BranchManager: 'branch_manager',
+  Driver: 'driver',
+  Packer: 'packer',
 } as const;
 
 function makeContext(user?: Partial<AuthenticatedUser> | null): ExecutionContext {
@@ -81,21 +83,21 @@ describe('RolesGuard', () => {
   it('allows when no roles are required', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
     expect(
-      guard.canActivate(makeContext({ dbUserId: 'u1', roles: [ERole.StoreStaff as never] })),
+      guard.canActivate(makeContext({ dbUserId: 'u1', roles: [ERole.Driver as never] })),
     ).toBe(true);
   });
 
   it('rejects users who are not onboarded', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ERole.StoreStaff]);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ERole.Driver]);
     expect(() =>
-      guard.canActivate(makeContext({ roles: [ERole.StoreStaff as never] })),
+      guard.canActivate(makeContext({ roles: [ERole.Driver as never] })),
     ).toThrow(ForbiddenException);
   });
 
   it('rejects onboarded users missing a required role', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ERole.OrgAdmin, ERole.SuperAdmin]);
     expect(() =>
-      guard.canActivate(makeContext({ dbUserId: 'u1', roles: [ERole.StoreStaff as never] })),
+      guard.canActivate(makeContext({ dbUserId: 'u1', roles: [ERole.Driver as never] })),
     ).toThrow(/Access denied/);
   });
 
@@ -103,16 +105,16 @@ describe('RolesGuard', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([
       ERole.OrgAdmin,
       ERole.SuperAdmin,
-      ERole.StoreManager,
-      ERole.StoreStaff,
+      ERole.BranchManager,
+      ERole.Driver,
     ]);
     expect(
-      guard.canActivate(makeContext({ dbUserId: 'u1', roles: [ERole.StoreManager as never] })),
+      guard.canActivate(makeContext({ dbUserId: 'u1', roles: [ERole.BranchManager as never] })),
     ).toBe(true);
   });
 
   it('reads required roles from handler/class metadata key', () => {
-    const spy = jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ERole.StoreStaff]);
+    const spy = jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ERole.Driver]);
     const handler = jest.fn();
     const klass = jest.fn();
     const ctx = {
@@ -123,7 +125,7 @@ describe('RolesGuard', () => {
           user: Object.assign(new AuthenticatedUser(), {
             clerkUserId: 'user_test',
             dbUserId: 'u1',
-            roles: [ERole.StoreStaff],
+            roles: [ERole.Driver],
             locationIds: [],
             hasOrgWideAccess: false,
           }),

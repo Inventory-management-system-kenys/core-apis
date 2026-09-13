@@ -106,6 +106,7 @@ export class GenerateReportCommandHandler implements ICommandHandler<GenerateRep
     const orgId      = command.orgId;
     const locationId = command.locationId ?? null;
     const qr         = this.dataSource.createQueryRunner();
+    await qr.connect();
 
     const locFilter     = locationId ? `AND location_id = '${locationId}'` : '';
     const locBillFilter = locationId ? `AND b.location_id = '${locationId}'` : '';
@@ -126,20 +127,14 @@ export class GenerateReportCommandHandler implements ICommandHandler<GenerateRep
 
     try {
       switch (command.reportType) {
-        case EReportType.TotalSales: {
-          const val = Number(await this.scalar(qr, `SELECT COALESCE(SUM(total_amount),0) FROM core.bills WHERE organization_id='${orgId}' AND status='COMPLETED' ${locBillFilter} AND billed_at BETWEEN '${fromIso}' AND '${toIso}'`));
-          return { ...base, formattedValue: this.inr(val) };
-        }
+        case EReportType.TotalSales:
+          return this.buildSalesReport(qr, orgId, locBillFilter, fromIso, toIso, '', 'Total Bills', base);
 
-        case EReportType.CashSales: {
-          const val = Number(await this.scalar(qr, `SELECT COALESCE(SUM(total_amount),0) FROM core.bills WHERE organization_id='${orgId}' AND status='COMPLETED' AND payment_method='CASH' ${locBillFilter} AND billed_at BETWEEN '${fromIso}' AND '${toIso}'`));
-          return { ...base, formattedValue: this.inr(val) };
-        }
+        case EReportType.CashSales:
+          return this.buildSalesReport(qr, orgId, locBillFilter, fromIso, toIso, "AND b.payment_method='CASH'", 'Cash Bills', base);
 
-        case EReportType.CreditSales: {
-          const val = Number(await this.scalar(qr, `SELECT COALESCE(SUM(total_amount),0) FROM core.bills WHERE organization_id='${orgId}' AND status='COMPLETED' AND sale_type='credit' ${locBillFilter} AND billed_at BETWEEN '${fromIso}' AND '${toIso}'`));
-          return { ...base, formattedValue: this.inr(val) };
-        }
+        case EReportType.CreditSales:
+          return this.buildSalesReport(qr, orgId, locBillFilter, fromIso, toIso, "AND b.sale_type='credit'", 'Credit Bills', base);
 
         case EReportType.TotalBills: {
           const val = Number(await this.scalar(qr, `SELECT COUNT(*) FROM core.bills WHERE organization_id='${orgId}' AND status='COMPLETED' ${locBillFilter} AND billed_at BETWEEN '${fromIso}' AND '${toIso}'`));
@@ -299,6 +294,102 @@ export class GenerateReportCommandHandler implements ICommandHandler<GenerateRep
     } finally {
       await qr.release();
     }
+  }
+
+  private async buildSalesReport(
+    qr: QueryRunner,
+    orgId: string,
+    locBillFilter: string,
+    fromIso: string,
+    toIso: string,
+    extraBillFilter: string,
+    billCountLabel: string,
+    base: Omit<TemplateContext, 'formattedValue' | 'tableHeaders' | 'tableRows' | 'summaryCards' | 'note'>,
+  ): Promise<TemplateContext> {
+    const val = Number(await this.scalar(qr, `SELECT COALESCE(SUM(total_amount),0) FROM core.bills b WHERE b.organization_id='${orgId}' AND b.status='COMPLETED' ${extraBillFilter} ${locBillFilter} AND b.billed_at BETWEEN '${fromIso}' AND '${toIso}'`));
+    const totalBills = Number(await this.scalar(qr, `SELECT COUNT(*) FROM core.bills b WHERE b.organization_id='${orgId}' AND b.status='COMPLETED' ${extraBillFilter} ${locBillFilter} AND b.billed_at BETWEEN '${fromIso}' AND '${toIso}'`));
+
+    const rows = await qr.query(`
+      SELECT 
+        COALESCE(p.name, 'Unnamed Item') AS product_name,
+        COALESCE(p.sku, '—') AS sku,
+        COALESCE(SUM(bi.quantity), 0) AS qty_sold,
+        COALESCE(SUM(bi.line_total), 0) AS revenue
+      FROM core.bill_items bi
+      JOIN core.bills b ON b.id = bi.bill_id
+      LEFT JOIN core.products p ON p.id = bi.product_id
+      WHERE b.organization_id = '${orgId}'
+        AND b.status = 'COMPLETED'
+        ${extraBillFilter}
+        ${locBillFilter}
+        AND b.billed_at BETWEEN '${fromIso}' AND '${toIso}'
+      GROUP BY p.id, p.name, p.sku
+      ORDER BY revenue DESC
+      LIMIT 100
+    `) as Array<Record<string, unknown>>;
+
+    const totalQty = rows.reduce((acc, rr) => acc + Number(rr['qty_sold'] ?? 0), 0);
+
+    if (rows.length > 0) {
+      return {
+        ...base,
+        formattedValue: this.inr(val),
+        summaryCards: [
+          { label: 'Total Revenue', value: this.inr(val) },
+          { label: billCountLabel, value: String(totalBills) },
+          { label: 'Items Sold', value: String(totalQty) },
+        ],
+        tableHeaders: ['Product Name', 'SKU', 'Qty Sold', 'Total Amount'],
+        tableRows: rows.map((rr) => [
+          String(rr['product_name']),
+          String(rr['sku'] || '—'),
+          String(rr['qty_sold']),
+          this.inr(Number(rr['revenue'])),
+        ]),
+      };
+    }
+
+    if (totalBills > 0) {
+      const billRows = await qr.query(`
+        SELECT b.bill_number, b.billed_at, b.payment_method, b.total_amount
+        FROM core.bills b
+        WHERE b.organization_id = '${orgId}'
+          AND b.status = 'COMPLETED'
+          ${extraBillFilter}
+          ${locBillFilter}
+          AND b.billed_at BETWEEN '${fromIso}' AND '${toIso}'
+        ORDER BY b.billed_at DESC
+        LIMIT 100
+      `) as Array<Record<string, unknown>>;
+
+      return {
+        ...base,
+        formattedValue: this.inr(val),
+        summaryCards: [
+          { label: 'Total Revenue', value: this.inr(val) },
+          { label: billCountLabel, value: String(totalBills) },
+        ],
+        tableHeaders: ['Bill Number', 'Date', 'Payment Method', 'Total Amount'],
+        tableRows: billRows.map((b) => [
+          String(b['bill_number']),
+          b['billed_at'] ? this.fmt(new Date(String(b['billed_at']))) : '—',
+          String(b['payment_method'] ?? '—'),
+          this.inr(Number(b['total_amount'])),
+        ]),
+      };
+    }
+
+    return {
+      ...base,
+      formattedValue: this.inr(val),
+      summaryCards: [
+        { label: 'Total Revenue', value: this.inr(val) },
+        { label: billCountLabel, value: '0' },
+        { label: 'Items Sold', value: '0' },
+      ],
+      tableHeaders: ['Product Name', 'SKU', 'Qty Sold', 'Total Amount'],
+      tableRows: [],
+    };
   }
 
   private async scalar(qr: QueryRunner, sql: string): Promise<unknown> {
