@@ -64,6 +64,7 @@ jobs:
             -o StrictHostKeyChecking=yes \
             "$EC2_USER@$EC2_HOST" \
             "echo '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
+             docker image prune -af && \
              docker pull '$IMAGE' && \
              docker run --rm \
                --add-host=host.docker.internal:host-gateway \
@@ -99,6 +100,7 @@ jobs:
             "$EC2_USER@$EC2_HOST" \
             "echo '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
              cd ~/Core-ERP/core-apis && \
+             BACKEND_IMAGE='$IMAGE' docker compose -f docker-compose.development.yml down && \
+             docker image prune -af && \
              BACKEND_IMAGE='$IMAGE' docker compose -f docker-compose.development.yml pull && \
-             BACKEND_IMAGE='$IMAGE' docker compose -f docker-compose.development.yml up -d && \
-             docker image prune -f"
+             BACKEND_IMAGE='$IMAGE' docker compose -f docker-compose.development.yml up -d"
