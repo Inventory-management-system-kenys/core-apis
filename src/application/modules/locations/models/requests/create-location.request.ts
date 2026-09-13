@@ -7,7 +7,6 @@ export class CreateLocationRequest {
   @ApiProperty() @IsNotEmpty() @IsString() @AutoMap() public name: string;
   @ApiProperty({ enum: ELocationType }) @IsEnum(ELocationType) @AutoMap(() => String) public type: ELocationType;
   @ApiProperty() @IsUUID() @AutoMap() public branchId: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() @AutoMap() public parentId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public address?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public city?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public state?: string;

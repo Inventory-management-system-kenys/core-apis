@@ -12,6 +12,7 @@ export * from './rpc-not-implemented.exception';
 export * from './rpc-not-acceptable.exception';
 export * from './access';
 export * from './beneficiary';
+export * from './branches';
 export * from './inventory';
 export * from './locations';
 export * from './organizations';

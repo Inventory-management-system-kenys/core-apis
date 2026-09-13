@@ -4,7 +4,7 @@ import { ELocationType } from 'src/infrastructure/persistence/entities';
 export class Location {
   @AutoMap() public id: string;
   @AutoMap() public organizationId: string;
-  @AutoMap() public parentId?: string;
+  @AutoMap() public branchId?: string;
   @AutoMap() public name: string;
   @AutoMap(() => String) public type: ELocationType;
   @AutoMap() public imageKey?: string;
@@ -23,5 +23,4 @@ export interface LocationFilter {
   type?: ELocationType;
   isActive?: boolean;
   organizationId?: string;
-  parentId?: string;
 }

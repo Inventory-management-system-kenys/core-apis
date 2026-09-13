@@ -6,7 +6,6 @@ import { ELocationType } from 'src/infrastructure/persistence/entities';
 export class UpdateLocationRequest {
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public name?: string;
   @ApiPropertyOptional({ enum: ELocationType }) @IsOptional() @IsEnum(ELocationType) @AutoMap(() => String) public type?: ELocationType;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() @AutoMap() public parentId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public address?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public city?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @AutoMap() public state?: string;
