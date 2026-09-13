@@ -82,6 +82,7 @@ import { QuickChargeEntity } from './quick-charge.entity';
 import { CustomerTypeRuleEntity } from './customer-type-rule.entity';
 import { TripStopEntity } from './trip-stop.entity';
 import { UserDeviceTokenEntity } from './user-device-token.entity';
+import { DeploymentCheckEntity } from './deployment-check.entity';
 
 export * from './branch.entity';
 export * from './location.entity';
@@ -169,6 +170,7 @@ export * from './quick-charge.entity';
 export * from './customer-type-rule.entity';
 export * from './trip-stop.entity';
 export * from './user-device-token.entity';
+export * from './deployment-check.entity';
 
 export default [
   BranchEntity,
@@ -254,4 +256,5 @@ export default [
   CustomerTypeRuleEntity,
   TripStopEntity,
   UserDeviceTokenEntity,
+  DeploymentCheckEntity,
 ];
