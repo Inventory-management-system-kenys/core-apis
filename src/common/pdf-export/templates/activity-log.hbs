@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Activity Log</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #123; font-size: 11px; line-height: 1.5; }
+    .page { padding: 8px 4px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #1e4b8e; padding-bottom: 10px; }
+    .header h1 { font-size: 20px; color: #1e4b8e; font-weight: 800; }
+    .header .meta { font-size: 10px; color: #555; text-align: right; }
+    .range-badge { display: inline-block; background: #eef2fb; border: 1px solid #1e4b8e; padding: 3px 10px; border-radius: 4px; font-size: 10px; color: #1e4b8e; margin-bottom: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th { background: #1e4b8e; color: #fff; text-align: left; padding: 7px 8px; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+    td { padding: 6px 8px; border-bottom: 1px solid #e8ecf4; vertical-align: top; }
+    tr:nth-child(even) td { background: #f6f8fd; }
+    .action { font-family: 'Courier New', monospace; font-size: 10px; color: #1e4b8e; }
+    .ref { font-family: 'Courier New', monospace; font-size: 10px; color: #555; }
+    .footer { text-align: center; font-size: 9px; color: #888; border-top: 1px solid #e0e0e0; padding-top: 8px; }
+    .empty { text-align: center; color: #888; padding: 24px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <h1>Activity Log</h1>
+        <div style="color:#555;font-size:10px;margin-top:4px;">Generated {{generatedAt}}</div>
+      </div>
+      <div class="meta">Export</div>
+    </div>
+
+    <div class="range-badge">Period: {{dateLabel}}</div>
+
+    {{#if rows.length}}
+    <table>
+      <thead>
+        <tr>
+          <th style="width:18%">When</th>
+          <th style="width:22%">Event</th>
+          <th style="width:16%">Module</th>
+          <th style="width:14%">Record</th>
+          <th style="width:30%">Performed By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each rows}}
+        <tr>
+          <td>{{this.when}}</td>
+          <td class="action">{{this.action}}</td>
+          <td>{{this.entityType}}</td>
+          <td class="ref">{{this.entityId}}</td>
+          <td>{{this.actorName}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    {{else}}
+    <div class="empty">No activity found for the selected filters.</div>
+    {{/if}}
+
+    <div class="footer">Activity Log Export &mdash; Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>
+  </div>
+</body>
+</html>

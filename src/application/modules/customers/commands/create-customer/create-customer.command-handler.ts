@@ -4,7 +4,9 @@ import { Mapper } from '@automapper/core';
 import { InjectMapper } from '@automapper/nestjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CommandHandlerStrict } from '../../../../../common';
+import { EActivityAction } from '../../../../../infrastructure/persistence/entities/activity-log.entity';
 import { CUSTOMER_REPO, CUSTOMER_TYPE_RULE_REPO } from '../../../../constants';
+import { ActivityLogService } from '../../../../shared';
 import { ICustomerTypeRuleRepo } from '../../../billing-settings';
 import { Customer } from '../../domain';
 import { ICustomerRepo } from '../../i-customer.repo';
@@ -15,6 +17,7 @@ export class CreateCustomerCommandHandler implements ICommandHandler<CreateCusto
   constructor(
     @Inject(CUSTOMER_REPO) private readonly repo: ICustomerRepo,
     @Inject(CUSTOMER_TYPE_RULE_REPO) private readonly typeRuleRepo: ICustomerTypeRuleRepo,
+    private readonly activityLog: ActivityLogService,
     @InjectMapper() private readonly mapper: Mapper,
     @InjectPinoLogger(CreateCustomerCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
@@ -31,6 +34,14 @@ export class CreateCustomerCommandHandler implements ICommandHandler<CreateCusto
         customer.creditLimit = rule.defaultCreditLimit;
       }
     }
-    return this.repo.createAsync(customer);
+    const created = await this.repo.createAsync(customer);
+    this.activityLog.record({
+      action: EActivityAction.CustomerCreated,
+      entityType: 'Customer',
+      entityId: created.id,
+      organizationId: command.organizationId,
+      metadata: { name: created.name, customerType: created.customerType },
+    });
+    return created;
   }
 }

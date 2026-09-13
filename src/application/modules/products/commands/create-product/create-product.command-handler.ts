@@ -8,7 +8,8 @@ import { PRODUCT_REPO } from '../../../../constants';
 import { Product } from '../../domain';
 import { IProductRepo } from '../..';
 import { EProductLogAction } from 'src/application/shared/enums/e-product-log-action.enum';
-import { ProductActivityLogger, ProductLogEntry } from 'src/application/shared';
+import { ActivityLogService, ProductActivityLogger, ProductLogEntry } from 'src/application/shared';
+import { EActivityAction } from 'src/infrastructure/persistence/entities/activity-log.entity';
 import { generateSku } from '../../helpers';
 import { CreateProductCommand } from './create-product.command';
 
@@ -17,6 +18,7 @@ export class CreateProductCommandHandler implements ICommandHandler<CreateProduc
   constructor(
     @Inject(PRODUCT_REPO) private readonly repo: IProductRepo,
     private readonly activityLogger: ProductActivityLogger,
+    private readonly activityLog: ActivityLogService,
     @InjectMapper() private readonly mapper: Mapper,
     @InjectPinoLogger(CreateProductCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
@@ -36,6 +38,14 @@ export class CreateProductCommandHandler implements ICommandHandler<CreateProduc
       performedById:  command.createdById,
     });
     await this.activityLogger.log(entry);
+    this.activityLog.record({
+      action: EActivityAction.ProductCreated,
+      entityType: 'Product',
+      entityId: created.id,
+      actorId: command.createdById,
+      organizationId: created.organizationId,
+      metadata: { name: created.name, sku: created.sku },
+    });
     return created;
   }
 }

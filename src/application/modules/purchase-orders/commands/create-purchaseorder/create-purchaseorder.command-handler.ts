@@ -10,7 +10,9 @@ import { IPurchaseOrderRepo } from '../..';
 import { IPurchaseItemRepo } from '../../../purchase-items/i-purchase-item.repo';
 import { PurchaseItem } from '../../../purchase-items/domain';
 import { CreatePurchaseItemCommand } from '../../../purchase-items/commands';
+import { ActivityLogService } from 'src/application/shared';
 import { EPurchaseOrderStatus } from 'src/application/shared/enums';
+import { EActivityAction } from 'src/infrastructure/persistence/entities/activity-log.entity';
 import { CreatePurchaseOrderCommand } from './create-purchaseorder.command';
 
 @CommandHandlerStrict(CreatePurchaseOrderCommand)
@@ -18,6 +20,7 @@ export class CreatePurchaseOrderCommandHandler implements ICommandHandler<Create
   constructor(
     @Inject(PURCHASE_ORDER_REPO) private readonly poRepo: IPurchaseOrderRepo,
     @Inject(PURCHASE_ITEM_REPO) private readonly itemRepo: IPurchaseItemRepo,
+    private readonly activityLog: ActivityLogService,
     @InjectMapper() private readonly mapper: Mapper,
     @InjectPinoLogger(CreatePurchaseOrderCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
@@ -45,6 +48,15 @@ export class CreatePurchaseOrderCommandHandler implements ICommandHandler<Create
     }
 
     savedPo.totalAmount = totalAmount;
-    return this.poRepo.updateAsync(savedPo);
+    const result = await this.poRepo.updateAsync(savedPo);
+    this.activityLog.record({
+      action: EActivityAction.PurchaseOrderCreated,
+      entityType: 'PurchaseOrder',
+      entityId: result.id,
+      actorId: command.createdById,
+      organizationId: command.organizationId,
+      metadata: { poNumber: result.poNumber, totalAmount: result.totalAmount },
+    });
+    return result;
   }
 }

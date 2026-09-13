@@ -6,7 +6,9 @@ import { PURCHASE_ITEM_REPO, PURCHASE_ORDER_REPO } from '../../../../constants';
 import { PurchaseOrder } from '../../domain';
 import { IPurchaseOrderRepo } from '../..';
 import { IPurchaseItemRepo } from '../../../purchase-items/i-purchase-item.repo';
+import { ActivityLogService } from 'src/application/shared';
 import { EPurchaseOrderStatus } from 'src/application/shared/enums';
+import { EActivityAction } from 'src/infrastructure/persistence/entities/activity-log.entity';
 import { ReceivePurchaseOrderCommand } from './receive-purchaseorder.command';
 
 const BLOCKED_STATUSES: EPurchaseOrderStatus[] = [
@@ -19,6 +21,7 @@ export class ReceivePurchaseOrderCommandHandler implements ICommandHandler<Recei
   constructor(
     @Inject(PURCHASE_ORDER_REPO) private readonly poRepo: IPurchaseOrderRepo,
     @Inject(PURCHASE_ITEM_REPO) private readonly itemRepo: IPurchaseItemRepo,
+    private readonly activityLog: ActivityLogService,
     @InjectPinoLogger(ReceivePurchaseOrderCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
 
@@ -48,6 +51,14 @@ export class ReceivePurchaseOrderCommandHandler implements ICommandHandler<Recei
       po.status = EPurchaseOrderStatus.PartiallyReceived;
     }
 
-    return this.poRepo.updateAsync(po);
+    const result = await this.poRepo.updateAsync(po);
+    this.activityLog.record({
+      action: EActivityAction.PurchaseOrderGoodsReceived,
+      entityType: 'PurchaseOrder',
+      entityId: result.id,
+      organizationId: result.organizationId,
+      metadata: { poNumber: result.poNumber, status: result.status },
+    });
+    return result;
   }
 }

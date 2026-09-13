@@ -5,7 +5,9 @@ import { ICommandHandler } from '@nestjs/cqrs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CommandHandlerStrict } from '../../../../../common';
 import { EBillStatus, ERole, ESaleType } from '../../../../../infrastructure/persistence/entities';
+import { EActivityAction } from '../../../../../infrastructure/persistence/entities/activity-log.entity';
 import { BILL_REPO, PRODUCT_REPO } from '../../../../constants';
+import { ActivityLogService } from '../../../../shared';
 import { IProductRepo } from '../../../products';
 import { Bill, BillItem } from '../../domain';
 import { applyBillTotals, generateBillNumber } from '../../helpers';
@@ -19,6 +21,7 @@ export class CreateBillCommandHandler implements ICommandHandler<CreateBillComma
   constructor(
     @Inject(BILL_REPO) private readonly repo: IBillRepo,
     @Inject(PRODUCT_REPO) private readonly productRepo: IProductRepo,
+    private readonly activityLog: ActivityLogService,
     @InjectMapper() private readonly mapper: Mapper,
     @InjectPinoLogger(CreateBillCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
@@ -56,6 +59,15 @@ export class CreateBillCommandHandler implements ICommandHandler<CreateBillComma
       }
     }
 
-    return this.repo.createAsync(bill);
+    const created = await this.repo.createAsync(bill);
+    this.activityLog.record({
+      action: EActivityAction.BillCreated,
+      entityType: 'Bill',
+      entityId: created.id,
+      actorId: command.createdById,
+      organizationId: command.organizationId,
+      metadata: { billNumber: created.billNumber, totalAmount: created.totalAmount, saleType: created.saleType },
+    });
+    return created;
   }
 }

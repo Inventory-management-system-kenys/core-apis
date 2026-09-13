@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { SharedModule } from '../../shared';
 import { ActivityLogsController } from './activity-logs.controller';
-import { ActivityLogCommandHandlers } from './commands';
 import { ActivityLogQueryHandlers } from './queries';
 import { ActivityLogProfile } from './mapper';
 
 @Module({
-  imports:     [CqrsModule],
+  imports:     [CqrsModule, SharedModule],
   controllers: [ActivityLogsController],
   providers:   [
-    ...ActivityLogCommandHandlers,
     ...ActivityLogQueryHandlers,
     ActivityLogProfile,
   ],
