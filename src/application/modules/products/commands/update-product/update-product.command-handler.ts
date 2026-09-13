@@ -8,7 +8,8 @@ import { PRODUCT_REPO } from '../../../../constants';
 import { Product } from '../../domain';
 import { IProductRepo } from '../..';
 import { EProductLogAction } from 'src/application/shared/enums/e-product-log-action.enum';
-import { ProductActivityLogger, ProductLogEntry } from 'src/application/shared';
+import { ActivityLogService, ProductActivityLogger, ProductLogEntry } from 'src/application/shared';
+import { EActivityAction } from 'src/infrastructure/persistence/entities/activity-log.entity';
 import { UpdateProductCommand } from './update-product.command';
 
 @CommandHandlerStrict(UpdateProductCommand)
@@ -16,6 +17,7 @@ export class UpdateProductCommandHandler implements ICommandHandler<UpdateProduc
   constructor(
     @Inject(PRODUCT_REPO) private readonly repo: IProductRepo,
     private readonly activityLogger: ProductActivityLogger,
+    private readonly activityLog: ActivityLogService,
     @InjectMapper() private readonly mapper: Mapper,
     @InjectPinoLogger(UpdateProductCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
@@ -43,6 +45,13 @@ export class UpdateProductCommandHandler implements ICommandHandler<UpdateProduc
         changedFields,
       });
       await this.activityLogger.log(entry);
+      this.activityLog.record({
+        action: EActivityAction.ProductUpdated,
+        entityType: 'Product',
+        entityId: updated.id,
+        organizationId: updated.organizationId,
+        metadata: { changedFields },
+      });
     }
 
     return updated;

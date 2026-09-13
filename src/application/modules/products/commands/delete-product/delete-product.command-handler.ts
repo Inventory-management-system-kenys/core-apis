@@ -5,7 +5,8 @@ import { CommandHandlerStrict } from 'src/common';
 import { PRODUCT_REPO } from '../../../../constants';
 import { IProductRepo } from '../..';
 import { EProductLogAction } from 'src/application/shared/enums/e-product-log-action.enum';
-import { ProductActivityLogger, ProductLogEntry } from 'src/application/shared';
+import { ActivityLogService, ProductActivityLogger, ProductLogEntry } from 'src/application/shared';
+import { EActivityAction } from 'src/infrastructure/persistence/entities/activity-log.entity';
 import { DeleteProductCommand } from './delete-product.command';
 
 @CommandHandlerStrict(DeleteProductCommand)
@@ -13,6 +14,7 @@ export class DeleteProductCommandHandler implements ICommandHandler<DeleteProduc
   constructor(
     @Inject(PRODUCT_REPO) private readonly repo: IProductRepo,
     private readonly activityLogger: ProductActivityLogger,
+    private readonly activityLog: ActivityLogService,
     @InjectPinoLogger(DeleteProductCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
 
@@ -26,6 +28,12 @@ export class DeleteProductCommandHandler implements ICommandHandler<DeleteProduc
       productId:      product.id,
     });
     await this.activityLogger.log(entry);
+    this.activityLog.record({
+      action: EActivityAction.ProductDeleted,
+      entityType: 'Product',
+      entityId: product.id,
+      organizationId: product.organizationId,
+    });
     return true;
   }
 }

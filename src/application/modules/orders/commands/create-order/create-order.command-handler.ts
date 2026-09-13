@@ -9,7 +9,8 @@ import { IOrderItemRepo } from '../../i-order-item.repo';
 import { CreateOrderCommand } from './create-order.command';
 import { OrdersMailService } from '../../mail';
 import { IPushNotificationService, PUSH_NOTIFICATION_SERVICE } from '../../../../../common';
-import { BillCompletionService, CreditLimitExceededError } from '../../../../shared/services/bill-completion.service';
+import { ActivityLogService, BillCompletionService, CreditLimitExceededError } from '../../../../shared';
+import { EActivityAction } from '../../../../../infrastructure/persistence/entities/activity-log.entity';
 import { IBillRepo } from '../../../bills';
 import { Bill } from '../../../bills/domain';
 import { generateBillNumber } from '../../../bills/helpers';
@@ -29,6 +30,7 @@ export class CreateOrderCommandHandler implements ICommandHandler<CreateOrderCom
     @Inject(CUSTOMER_REPO) private readonly customerRepo: { getAsync: (id: string) => Promise<{ email?: string; name?: string } | null> },
     private readonly mailService: OrdersMailService,
     @Inject(PUSH_NOTIFICATION_SERVICE) private readonly pushService: IPushNotificationService,
+    private readonly activityLog: ActivityLogService,
     @InjectPinoLogger(CreateOrderCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
 
@@ -84,6 +86,15 @@ export class CreateOrderCommandHandler implements ICommandHandler<CreateOrderCom
       this.logger.warn({ error: err.message }, 'Order push notification failed — non-fatal'),
     );
 
+    this.activityLog.record({
+      action: EActivityAction.SaleCreated,
+      entityType: 'Order',
+      entityId: order.id,
+      actorId: command.performedById,
+      organizationId: order.organizationId ?? sellingLocation.organizationId,
+      locationId: command.locationId,
+      metadata: { orderNumber: order.orderNumber, totalAmount: order.totalAmount, status: order.status },
+    });
     return { ...order, items: savedItems };
   }
 

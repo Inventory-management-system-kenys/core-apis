@@ -4,7 +4,9 @@ import { InjectMapper } from '@automapper/nestjs';
 import { Mapper } from '@automapper/core';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CommandHandlerStrict } from '../../../../../common';
+import { EActivityAction } from '../../../../../infrastructure/persistence/entities/activity-log.entity';
 import { BRANCH_REPO, LOCATION_REPO } from '../../../../constants';
+import { ActivityLogService } from '../../../../shared';
 import { Branch } from '../../domain';
 import { IBranchRepo } from '../..';
 import { ILocationRepo } from '../../../locations';
@@ -16,6 +18,7 @@ export class CreateBranchCommandHandler implements ICommandHandler<CreateBranchC
   constructor(
     @Inject(BRANCH_REPO) private readonly repo: IBranchRepo,
     @Inject(LOCATION_REPO) private readonly locationRepo: ILocationRepo,
+    private readonly activityLog: ActivityLogService,
     @InjectMapper() private readonly mapper: Mapper,
     @InjectPinoLogger(CreateBranchCommandHandler.name) private readonly logger: PinoLogger,
   ) {}
@@ -35,6 +38,13 @@ export class CreateBranchCommandHandler implements ICommandHandler<CreateBranchC
     }
 
     created.locationIds = await loadBranchLocationIds(this.locationRepo, created.id);
+    this.activityLog.record({
+      action: EActivityAction.BranchCreated,
+      entityType: 'Branch',
+      entityId: created.id,
+      organizationId: command.organizationId,
+      metadata: { name: created.name },
+    });
     return created;
   }
 }

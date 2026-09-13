@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { SharedModule } from '../../shared';
 import { BranchesController } from './branches.controller';
 import { BranchCommandHandlers } from './commands';
 import { BranchQueryHandlers } from './queries';
@@ -8,7 +9,7 @@ import { BranchFeatureOptions } from './options';
 import { BranchFilterNormalizer } from './helpers';
 
 @Module({
-  imports:     [CqrsModule],
+  imports:     [CqrsModule, SharedModule],
   controllers: [BranchesController],
   providers:   [
     ...BranchCommandHandlers,

@@ -61,6 +61,8 @@ export class InvoicesController {
     locationQuery.id = order.locationId;
     const location = await this.mediator.execute<GetLocationQuery, Location>(locationQuery);
     assertOrgOwnership(user, location.organizationId, 'invoice');
+    command.organizationId = location.organizationId;
+    command.actorId = user.dbUserId;
 
     const result  = await this.mediator.execute<CreateInvoiceCommand, Invoice>(command);
     return this.mapper.map(result, Invoice, InvoiceResponse);

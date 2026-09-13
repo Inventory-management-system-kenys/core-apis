@@ -16,28 +16,69 @@ const PK_NAME = 'PK_' + ECoreTableName.ActivityLogs;
 
 export enum EActivityAction {
   // Auth
-  Login               = 'login',
-  Logout              = 'logout',
-  // Inventory
-  AddStock            = 'add_stock',
-  RemoveStock         = 'remove_stock',
-  AdjustStock         = 'adjust_stock',
-  TransferStock       = 'transfer_stock',
+  AuthLogin             = 'auth.login',
+  AuthLogout            = 'auth.logout',
+  AuthLoginFailed       = 'auth.login_failed',
   // Products
-  CreateProduct       = 'create_product',
-  UpdateProduct       = 'update_product',
-  DeleteProduct       = 'delete_product',
-  // Orders
-  CreatePurchaseOrder = 'create_purchase_order',
-  ReceivePurchaseOrder= 'receive_purchase_order',
-  CancelPurchaseOrder = 'cancel_purchase_order',
-  // Stores
-  CreateStore         = 'create_store',
-  UpdateStore         = 'update_store',
-  // Users
-  CreateUser          = 'create_user',
-  UpdateUser          = 'update_user',
-  DeactivateUser      = 'deactivate_user',
+  ProductCreated        = 'product.created',
+  ProductUpdated        = 'product.updated',
+  ProductDeleted        = 'product.deleted',
+  ProductEnabled        = 'product.enabled',
+  ProductDisabled       = 'product.disabled',
+  ProductPriceChanged   = 'product.price_changed',
+  // Inventory / Stock
+  StockAdded            = 'stock.added',
+  StockRemoved          = 'stock.removed',
+  StockAdjusted         = 'stock.adjusted',
+  StockTransferred      = 'stock.transferred',
+  StockDamaged          = 'stock.damaged',
+  StockWrittenOff       = 'stock.written_off',
+  StockReserved         = 'stock.reserved',
+  StockReservationReleased = 'stock.reservation_released',
+  // Sales / POS
+  SaleCreated           = 'sale.created',
+  SaleConfirmed         = 'sale.confirmed',
+  SaleVoided            = 'sale.voided',
+  SalePaymentReceived   = 'sale.payment_received',
+  SaleRefunded          = 'sale.refunded',
+  // Purchase Orders
+  PurchaseOrderCreated        = 'purchase_order.created',
+  PurchaseOrderSent           = 'purchase_order.sent',
+  PurchaseOrderGoodsReceived  = 'purchase_order.goods_received',
+  PurchaseOrderCancelled      = 'purchase_order.cancelled',
+  // Invoices
+  InvoiceCreated        = 'invoice.created',
+  InvoiceSent           = 'invoice.sent',
+  InvoicePaid           = 'invoice.paid',
+  InvoiceVoided         = 'invoice.voided',
+  // Bills
+  BillCreated           = 'bill.created',
+  BillPaid              = 'bill.paid',
+  // Customers
+  CustomerCreated       = 'customer.created',
+  CustomerUpdated       = 'customer.updated',
+  CustomerCreditLimitChanged = 'customer.credit_limit_changed',
+  CustomerDeactivated   = 'customer.deactivated',
+  // Suppliers
+  SupplierCreated       = 'supplier.created',
+  SupplierUpdated       = 'supplier.updated',
+  SupplierDeactivated   = 'supplier.deactivated',
+  // Users & Staff
+  UserCreated           = 'user.created',
+  UserUpdated           = 'user.updated',
+  UserRoleChanged       = 'user.role_changed',
+  UserDeactivated       = 'user.deactivated',
+  UserReactivated       = 'user.reactivated',
+  // Branches / Stores
+  BranchCreated         = 'branch.created',
+  BranchUpdated         = 'branch.updated',
+  // Reports
+  ReportGenerated       = 'report.generated',
+  ReportExported        = 'report.exported',
+  // Org Settings
+  OrgSettingsUpdated    = 'org.settings_updated',
+  OrgModuleToggled      = 'org.module_toggled',
+  OrgBillingChanged     = 'org.billing_changed',
 }
 
 @Entity({ schema: CORE_SCHEMA, name: ECoreTableName.ActivityLogs })
@@ -76,6 +117,11 @@ export class ActivityLogEntity {
   @AutoMap()
   @Column({ type: 'jsonb', nullable: true })
   public metadata?: Record<string, unknown>;
+
+  /** Display name of the actor, snapshotted at log time */
+  @AutoMap()
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  public actorName?: string;
 
   /** IP address of client */
   @AutoMap()
